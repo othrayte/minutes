@@ -147,7 +147,7 @@ func runRootCmd(_ *cobra.Command, _ []string) {
 	wl := worklog.NewWorklog(entries, &worklog.FilterOpts{
 		Client:  regexp.MustCompile(viper.GetString("filter-client")),
 		Project: regexp.MustCompile(viper.GetString("filter-project")),
-	})
+	}, viper.GetBool("merge"))
 
 	completeEntries := wl.CompleteEntries()
 	incompleteEntries := wl.IncompleteEntries()

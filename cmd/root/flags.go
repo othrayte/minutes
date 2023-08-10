@@ -38,6 +38,7 @@ func initCommonFlags() {
 
 	rootCmd.Flags().StringP("filter-client", "", "", "filter for client name after fetching")
 	rootCmd.Flags().StringP("filter-project", "", "", "filter for project name after fetching")
+	rootCmd.Flags().BoolP("merge", "", true, "merge entries with matching project, task, summary and start date")
 
 	rootCmd.Flags().BoolP("dry-run", "", false, "fetch entries, but do not sync them")
 	rootCmd.Flags().BoolP("version", "", false, "show command version")

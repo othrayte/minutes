@@ -29,7 +29,7 @@ func benchNewWorklog(b *testing.B, entryCount int) {
 	for n := 0; n != b.N; n++ {
 		// always store the result to a package level variable
 		// so the compiler cannot eliminate the Benchmark itself.
-		newWorklogBenchResult = worklog.NewWorklog(entries, &worklog.FilterOpts{})
+		newWorklogBenchResult = worklog.NewWorklog(entries, &worklog.FilterOpts{}, true)
 	}
 }
 
@@ -44,7 +44,7 @@ func benchmarkCompleteEntries(b *testing.B, entryCount int) {
 		entries = append(entries, entry)
 	}
 
-	wl := worklog.NewWorklog(entries, &worklog.FilterOpts{})
+	wl := worklog.NewWorklog(entries, &worklog.FilterOpts{}, true)
 
 	b.StartTimer()
 
@@ -66,7 +66,7 @@ func benchmarkIncompleteEntries(b *testing.B, entryCount int) {
 		entries = append(entries, entry)
 	}
 
-	wl := worklog.NewWorklog(entries, &worklog.FilterOpts{})
+	wl := worklog.NewWorklog(entries, &worklog.FilterOpts{}, true)
 
 	b.StartTimer()
 
@@ -120,7 +120,7 @@ func TestWorklogCompleteEntries(t *testing.T) {
 		completeEntry,
 		otherCompleteEntry,
 		incompleteEntry,
-	}, &worklog.FilterOpts{})
+	}, &worklog.FilterOpts{}, true)
 
 	entry := wl.CompleteEntries()[0]
 	assert.Equal(t, "It is a lot easier than expected; Really", entry.Notes)
@@ -141,7 +141,7 @@ func TestWorklogIncompleteEntries(t *testing.T) {
 		completeEntry,
 		incompleteEntry,
 		otherIncompleteEntry,
-	}, &worklog.FilterOpts{})
+	}, &worklog.FilterOpts{}, true)
 
 	entry := wl.IncompleteEntries()[0]
 	assert.Equal(t, "It is a lot easier than expected; Well, not that easy", entry.Notes)
@@ -175,7 +175,7 @@ func TestWorklogFilterEntries(t *testing.T) {
 		entry2,
 		entry3,
 		entry4,
-	}, filterOpts)
+	}, filterOpts, true)
 
 	assert.ElementsMatch(t, worklog.Entries{entry1, entry2}, wl.CompleteEntries())
 }

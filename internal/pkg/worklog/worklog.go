@@ -37,8 +37,8 @@ func isEntryMatching(entry Entry, opts *FilterOpts) bool {
 	return isClientMatching && isProjectMatching
 }
 
-// NewWorklog creates a worklog from the given set of entries and merges them.
-func NewWorklog(entries Entries, opts *FilterOpts) Worklog {
+// NewWorklog creates a worklog from the given set of entries and merges them if requested.
+func NewWorklog(entries Entries, opts *FilterOpts, merge bool) Worklog {
 	var filteredEntries Entries
 
 	worklog := Worklog{}
@@ -50,31 +50,43 @@ func NewWorklog(entries Entries, opts *FilterOpts) Worklog {
 		}
 	}
 
-	for _, entry := range filteredEntries {
-		key := entry.Key()
-		storedEntry, isStored := mergedEntries[key]
+	if merge {
+		for _, entry := range filteredEntries {
+			key := entry.Key()
+			storedEntry, isStored := mergedEntries[key]
 
-		if !isStored {
-			mergedEntries[key] = entry
-			continue
-		}
-
-		storedEntry.BillableDuration += entry.BillableDuration
-		storedEntry.UnbillableDuration += entry.UnbillableDuration
-
-		noteSeparator := ""
-		if storedEntry.Notes != "" && entry.Notes != storedEntry.Notes {
-			if entry.Notes != "" {
-				noteSeparator = "; "
+			if !isStored {
+				mergedEntries[key] = entry
+				continue
 			}
 
-			storedEntry.Notes = storedEntry.Notes + noteSeparator + entry.Notes
+			storedEntry.BillableDuration += entry.BillableDuration
+			storedEntry.UnbillableDuration += entry.UnbillableDuration
+
+			noteSeparator := ""
+			if storedEntry.Notes != "" && entry.Notes != storedEntry.Notes {
+				if entry.Notes != "" {
+					noteSeparator = "; "
+				}
+
+				storedEntry.Notes = storedEntry.Notes + noteSeparator + entry.Notes
+			}
+
+			mergedEntries[key] = storedEntry
 		}
 
-		mergedEntries[key] = storedEntry
+		for _, entry := range mergedEntries {
+			if entry.IsComplete() {
+				worklog.completeEntries = append(worklog.completeEntries, entry)
+			} else {
+				worklog.incompleteEntries = append(worklog.incompleteEntries, entry)
+			}
+		}
+
+		return worklog
 	}
 
-	for _, entry := range mergedEntries {
+	for _, entry := range filteredEntries {
 		if entry.IsComplete() {
 			worklog.completeEntries = append(worklog.completeEntries, entry)
 		} else {
