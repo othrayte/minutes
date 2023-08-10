@@ -12,7 +12,7 @@ import (
 
 var (
 	sources = []string{"clockify", "harvest", "tempo", "timewarrior", "toggl"}
-	targets = []string{"tempo"}
+	targets = []string{"tempo", "tempo-cloud"}
 )
 
 func initCommonFlags() {
@@ -59,6 +59,14 @@ func initTempoFlags() {
 	rootCmd.Flags().StringP("tempo-url", "", "", "set the base URL")
 	rootCmd.Flags().StringP("tempo-username", "", "", "set the login user ID")
 	rootCmd.Flags().StringP("tempo-password", "", "", "set the login password")
+}
+
+func initTempoCloudFlags() {
+	rootCmd.Flags().StringP("tempo-cloud-url", "", "https://api.tempo.io", "set the base URL for the tempo API")
+	rootCmd.Flags().StringP("tempo-api-key", "", "", "set the API key for tempo")
+	rootCmd.Flags().StringP("jira-url", "", "", "set the base URL for the jira API")
+	rootCmd.Flags().StringP("jira-username", "", "", "set the login username for jira")
+	rootCmd.Flags().StringP("jira-api-key", "", "", "set the API key for jira")
 }
 
 func initTimewarriorFlags() {

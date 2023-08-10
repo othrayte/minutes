@@ -62,6 +62,7 @@ func init() {
 	initClockifyFlags()
 	initHarvestFlags()
 	initTempoFlags()
+	initTempoCloudFlags()
 	initTimewarriorFlags()
 	initTogglFlags()
 }
