@@ -183,27 +183,31 @@ func runRootCmd(_ *cobra.Command, _ []string) {
 	// In worst case, the maximum number of errors will match the number of entries
 	uploadErrChan := make(chan error, len(completeEntries))
 
-	fmt.Printf("\nUploading worklog entries:\n\n")
 	if !viper.GetBool("dry-run") {
-		progressUpdateFrequency := progress.DefaultUpdateFrequency
-		progressWriter := utils.NewProgressWriter(progressUpdateFrequency)
+		if len(completeEntries) == 0 {
+			fmt.Printf("\nNothing to upload\n")
+		} else {
+			fmt.Printf("\nUploading worklog entries:\n\n")
+			progressUpdateFrequency := progress.DefaultUpdateFrequency
+			progressWriter := utils.NewProgressWriter(progressUpdateFrequency)
 
-		// Intentionally called as a goroutine
-		go progressWriter.Render()
+			// Intentionally called as a goroutine
+			go progressWriter.Render()
 
-		uploader.UploadEntries(context.Background(), completeEntries, uploadErrChan, &client.UploadOpts{
-			RoundToClosestMinute:   viper.GetBool("round-to-closest-minute"),
-			TreatDurationAsBilled:  viper.GetBool("force-billed-duration"),
-			CreateMissingResources: false,
-			User:                   viper.GetString("target-user"),
-			ProgressWriter:         progressWriter,
-		})
+			uploader.UploadEntries(context.Background(), completeEntries, uploadErrChan, &client.UploadOpts{
+				RoundToClosestMinute:   viper.GetBool("round-to-closest-minute"),
+				TreatDurationAsBilled:  viper.GetBool("force-billed-duration"),
+				CreateMissingResources: false,
+				User:                   viper.GetString("target-user"),
+				ProgressWriter:         progressWriter,
+			})
 
-		// Wait for at least one tracker to appear and while the rendering is in progress,
-		// wait for the remaining updates to render.
-		time.Sleep(time.Second)
-		for progressWriter.IsRenderInProgress() {
-			time.Sleep(progressUpdateFrequency)
+			// Wait for at least one tracker to appear and while the rendering is in progress,
+			// wait for the remaining updates to render.
+			time.Sleep(time.Second)
+			for progressWriter.IsRenderInProgress() {
+				time.Sleep(progressUpdateFrequency)
+			}
 		}
 	}
 
