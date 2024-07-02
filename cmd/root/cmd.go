@@ -135,11 +135,21 @@ func runRootCmd(_ *cobra.Command, _ []string) {
 	tagsAsTasksRegex, err := regexp.Compile(viper.GetString("tags-as-tasks-regex"))
 	cobra.CheckErr(err)
 
+	taskInSummaryRegex, err := regexp.Compile(viper.GetString("task-in-summary-regex"))
+	cobra.CheckErr(err)
+
+	taskInProjectRegex, err := regexp.Compile(viper.GetString("task-in-project-regex"))
+	cobra.CheckErr(err)
+
 	entries, err := fetcher.FetchEntries(context.Background(), &client.FetchOpts{
 		End:              end,
 		Start:            start,
 		User:             viper.GetString("source-user"),
 		TagsAsTasksRegex: tagsAsTasksRegex,
+		TaskExtraction: client.TaskExtractionOpts{
+			TaskInSummaryRegex: taskInSummaryRegex,
+			TaskInProjectRegex: taskInProjectRegex,
+		},
 	})
 	cobra.CheckErr(err)
 

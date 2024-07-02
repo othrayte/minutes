@@ -318,3 +318,285 @@ func TestTogglClient_FetchEntries_TagsAsTasks(t *testing.T) {
 	require.Nil(t, err, "cannot fetch entries")
 	require.ElementsMatch(t, expectedEntries, entries, "fetched entries are not matching")
 }
+
+func TestTogglClient_FetchEntries_TaskInDesc(t *testing.T) {
+	start := time.Date(2021, 10, 2, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2021, 10, 2, 23, 59, 59, 0, time.UTC)
+
+	clientUsername := "token-of-the-day"
+	clientPassword := "api_token"
+
+	expectedEntries := worklog.Entries{
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-2014",
+				Name: "CPT-2014",
+			},
+			Summary:            "CPT-2014 I met with The Winter Soldier",
+			Notes:              "CPT-2014 I met with The Winter Soldier",
+			Start:              start,
+			BillableDuration:   time.Second * 3600,
+			UnbillableDuration: 0,
+		},
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-2014",
+				Name: "CPT-2014",
+			},
+			Summary:            "CPT-2014 CPT-MISC I helped him to get back on track",
+			Notes:              "CPT-2014 CPT-MISC I helped him to get back on track",
+			Start:              start,
+			BillableDuration:   0,
+			UnbillableDuration: time.Second * 1800,
+		},
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-MISC",
+				Name: "CPT-MISC",
+			},
+			Summary:            "CPT-2014 CPT-MISC I helped him to get back on track",
+			Notes:              "CPT-2014 CPT-MISC I helped him to get back on track",
+			Start:              start,
+			BillableDuration:   0,
+			UnbillableDuration: time.Second * 1800,
+		},
+	}
+
+	mockServer := newMockServer(t, &mockServerOpts{
+		Path: toggl.PathWorklog,
+		QueryParams: url.Values{
+			"page":         {"1"},
+			"per_page":     {"50"},
+			"since":        {utils.DateFormatISO8601.Format(start)},
+			"until":        {utils.DateFormatISO8601.Format(end)},
+			"user_id":      {"987654321"},
+			"workspace_id": {"123456789"},
+			"user_agent":   {"github.com/gabor-boros/minutes"},
+		},
+		Method:     http.MethodGet,
+		StatusCode: http.StatusOK,
+		Username:   clientUsername,
+		Password:   clientPassword,
+		ResponseData: &toggl.FetchResponse{
+			TotalCount: 2,
+			PerPage:    50,
+			Data: []toggl.FetchEntry{
+				{
+					Client:      "My Awesome Company",
+					Description: "CPT-2014 I met with The Winter Soldier",
+					Duration:    3600000,
+					IsBillable:  true,
+					Project:     "MARVEL",
+					ProjectID:   456,
+					Start:       start,
+					End:         start.Add(3600000),
+					Tags:        []string{},
+				},
+				{
+					Client:      "My Awesome Company",
+					Description: "CPT-2014 CPT-MISC I helped him to get back on track",
+					Duration:    3600000,
+					IsBillable:  false,
+					Project:     "MARVEL",
+					ProjectID:   456,
+					Start:       start,
+					End:         start.Add(3600000),
+					Tags: []string{
+						"IGNORED",
+					},
+				},
+			},
+		},
+	})
+	defer mockServer.Close()
+
+	togglClient, err := toggl.NewFetcher(&toggl.ClientOpts{
+		BaseClientOpts: client.BaseClientOpts{
+			Timeout: client.DefaultRequestTimeout,
+		},
+		BasicAuth: client.BasicAuth{
+			Username: clientUsername,
+			Password: clientPassword,
+		},
+		BaseURL:   mockServer.URL,
+		Workspace: 123456789,
+	})
+	require.Nil(t, err)
+
+	entries, err := togglClient.FetchEntries(context.Background(), &client.FetchOpts{
+		User:  "987654321",
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TaskInSummaryRegex: regexp.MustCompile(`\bCPT-\w+\b`),
+		},
+	})
+
+	require.Nil(t, err, "cannot fetch entries")
+	require.ElementsMatch(t, expectedEntries, entries, "fetched entries are not matching")
+}
+
+func TestTogglClient_FetchEntries_TaskInProject(t *testing.T) {
+	start := time.Date(2021, 10, 2, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2021, 10, 2, 23, 59, 59, 0, time.UTC)
+
+	clientUsername := "token-of-the-day"
+	clientPassword := "api_token"
+
+	expectedEntries := worklog.Entries{
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL CPT-2014",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-2014",
+				Name: "CPT-2014",
+			},
+			Summary:            "I met with The Winter Soldier",
+			Notes:              "I met with The Winter Soldier",
+			Start:              start,
+			BillableDuration:   time.Second * 3600,
+			UnbillableDuration: 0,
+		},
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL CPT-2014 CPT-MISC",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-2014",
+				Name: "CPT-2014",
+			},
+			Summary:            "I helped him to get back on track",
+			Notes:              "I helped him to get back on track",
+			Start:              start,
+			BillableDuration:   0,
+			UnbillableDuration: time.Second * 1800,
+		},
+		{
+			Client: worklog.IDNameField{
+				ID:   "My Awesome Company",
+				Name: "My Awesome Company",
+			},
+			Project: worklog.IDNameField{
+				ID:   strconv.Itoa(456),
+				Name: "MARVEL CPT-2014 CPT-MISC",
+			},
+			Task: worklog.IDNameField{
+				ID:   "CPT-MISC",
+				Name: "CPT-MISC",
+			},
+			Summary:            "I helped him to get back on track",
+			Notes:              "I helped him to get back on track",
+			Start:              start,
+			BillableDuration:   0,
+			UnbillableDuration: time.Second * 1800,
+		},
+	}
+
+	mockServer := newMockServer(t, &mockServerOpts{
+		Path: toggl.PathWorklog,
+		QueryParams: url.Values{
+			"page":         {"1"},
+			"per_page":     {"50"},
+			"since":        {utils.DateFormatISO8601.Format(start)},
+			"until":        {utils.DateFormatISO8601.Format(end)},
+			"user_id":      {"987654321"},
+			"workspace_id": {"123456789"},
+			"user_agent":   {"github.com/gabor-boros/minutes"},
+		},
+		Method:     http.MethodGet,
+		StatusCode: http.StatusOK,
+		Username:   clientUsername,
+		Password:   clientPassword,
+		ResponseData: &toggl.FetchResponse{
+			TotalCount: 2,
+			PerPage:    50,
+			Data: []toggl.FetchEntry{
+				{
+					Client:      "My Awesome Company",
+					Description: "I met with The Winter Soldier",
+					Duration:    3600000,
+					IsBillable:  true,
+					Project:     "MARVEL CPT-2014",
+					ProjectID:   456,
+					Start:       start,
+					End:         start.Add(3600000),
+					Tags:        []string{},
+				},
+				{
+					Client:      "My Awesome Company",
+					Description: "I helped him to get back on track",
+					Duration:    3600000,
+					IsBillable:  false,
+					Project:     "MARVEL CPT-2014 CPT-MISC",
+					ProjectID:   456,
+					Start:       start,
+					End:         start.Add(3600000),
+					Tags: []string{
+						"IGNORED",
+					},
+				},
+			},
+		},
+	})
+	defer mockServer.Close()
+
+	togglClient, err := toggl.NewFetcher(&toggl.ClientOpts{
+		BaseClientOpts: client.BaseClientOpts{
+			Timeout: client.DefaultRequestTimeout,
+		},
+		BasicAuth: client.BasicAuth{
+			Username: clientUsername,
+			Password: clientPassword,
+		},
+		BaseURL:   mockServer.URL,
+		Workspace: 123456789,
+	})
+	require.Nil(t, err)
+
+	entries, err := togglClient.FetchEntries(context.Background(), &client.FetchOpts{
+		User:  "987654321",
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TaskInProjectRegex: regexp.MustCompile(`\bCPT-\w+\b`),
+		},
+	})
+
+	require.Nil(t, err, "cannot fetch entries")
+	require.ElementsMatch(t, expectedEntries, entries, "fetched entries are not matching")
+}

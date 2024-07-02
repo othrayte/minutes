@@ -32,6 +32,8 @@ func initCommonFlags() {
 	rootCmd.Flags().StringSliceP("table-hide-column", "", []string{}, fmt.Sprintf("hide table column %v", utils.HideableColumns))
 
 	rootCmd.Flags().StringP("tags-as-tasks-regex", "", "", "regex of the task pattern")
+	rootCmd.Flags().StringP("task-in-summary-regex", "", "", "regex of the task pattern in description")
+	rootCmd.Flags().StringP("task-in-project-regex", "", "", "regex of the task pattern in project")
 
 	rootCmd.Flags().BoolP("round-to-closest-minute", "", false, "round time to closest minute")
 	rootCmd.Flags().BoolP("force-billed-duration", "", false, "treat every second spent as billed")
@@ -110,6 +112,14 @@ func validateFlags() {
 
 	tagsAsTasksRegex := viper.GetString("tags-as-tasks-regex")
 	_, err = regexp.Compile(tagsAsTasksRegex)
+	cobra.CheckErr(err)
+
+	taskInSummaryRegex := viper.GetString("task-in-summary-regex")
+	_, err = regexp.Compile(taskInSummaryRegex)
+	cobra.CheckErr(err)
+
+	taskInProjectRegex := viper.GetString("task-in-project-regex")
+	_, err = regexp.Compile(taskInProjectRegex)
 	cobra.CheckErr(err)
 
 	for _, sortBy := range viper.GetStringSlice("table-sort-by") {

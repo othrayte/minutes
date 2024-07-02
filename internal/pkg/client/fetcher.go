@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/gabor-boros/minutes/internal/pkg/utils"
 	"github.com/gabor-boros/minutes/internal/pkg/worklog"
 )
 
@@ -25,6 +26,11 @@ var (
 	ErrFetchEntries = errors.New("failed to fetch entries")
 )
 
+type TaskExtractionOpts struct {
+	TaskInSummaryRegex *regexp.Regexp
+	TaskInProjectRegex *regexp.Regexp
+}
+
 // FetchOpts specifies the only options for Fetchers.
 // In contract to the BaseClientOpts, these options shall not be extended or
 // overridden.
@@ -36,6 +42,7 @@ type FetchOpts struct {
 	// TagsAsTasksRegex sets the regular expression used for extracting tasks
 	// from the list of tags.
 	TagsAsTasksRegex *regexp.Regexp
+	TaskExtraction   TaskExtractionOpts
 }
 
 // Fetcher specifies the functions used to fetch worklog entries.
@@ -64,4 +71,17 @@ type PaginatedFetchOpts struct {
 
 	FetchFunc PaginatedFetchFunc
 	ParseFunc PaginatedParseFunc
+}
+
+func ExtractTasks(e *worklog.Entry, opts *TaskExtractionOpts) []worklog.IDNameField {
+	var tasks []worklog.IDNameField
+	if utils.IsRegexSet(opts.TaskInSummaryRegex) {
+		tasks = append(tasks, e.TasksFromSummary(opts.TaskInSummaryRegex)...)
+	}
+
+	if utils.IsRegexSet(opts.TaskInProjectRegex) {
+		tasks = append(tasks, e.TasksFromProject(opts.TaskInProjectRegex)...)
+	}
+
+	return tasks
 }

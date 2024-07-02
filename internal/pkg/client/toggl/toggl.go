@@ -94,6 +94,8 @@ func (c *togglClient) parseEntries(rawEntries interface{}, opts *client.FetchOpt
 			UnbillableDuration: unbillableDuration,
 		}
 
+		var tasks []worklog.IDNameField
+
 		if utils.IsRegexSet(opts.TagsAsTasksRegex) && len(fetchedEntry.Tags) > 0 {
 			var tags []worklog.IDNameField
 			for _, tag := range fetchedEntry.Tags {
@@ -102,12 +104,13 @@ func (c *togglClient) parseEntries(rawEntries interface{}, opts *client.FetchOpt
 					Name: tag,
 				})
 			}
-
-			splitEntries := entry.SplitByTagsAsTasks(entry.Summary, opts.TagsAsTasksRegex, tags)
-			entries = append(entries, splitEntries...)
-		} else {
-			entries = append(entries, entry)
+			tasks = entry.TasksFromTags(tags, opts.TagsAsTasksRegex)
 		}
+
+		tasks = append(tasks, client.ExtractTasks(&entry, &opts.TaskExtraction)...)
+
+		splitEntries := entry.SplitByTasks(entry.Summary, tasks)
+		entries = append(entries, splitEntries...)
 	}
 
 	return entries, nil

@@ -91,21 +91,43 @@ func (e *Entry) SplitDuration(parts int) (splitBillableDuration time.Duration, s
 	return splitBillableDuration, splitUnbillableDuration
 }
 
-// SplitByTagsAsTasks splits the entry into pieces treating tags as tasks.
-// Not matching tags won't be treated as a new entry should be created,
-// therefore that tag will be skipped and the returned entries will lack that.
-// If no tags are provided, the original entry will be returned as the only item
-// of the `Entries` list.
-func (e *Entry) SplitByTagsAsTasks(summary string, regex *regexp.Regexp, tags []IDNameField) Entries {
-	if len(tags) == 0 {
-		return Entries{*e}
-	}
-
+// TasksFromTags returns the tasks from the provided tags that match the regex.
+// If the tag name matches the regex, it will be considered as a task.
+func (e *Entry) TasksFromTags(tags []IDNameField, regex *regexp.Regexp) []IDNameField {
 	var tasks []IDNameField
 	for _, tag := range tags {
 		if taskName := regex.FindString(tag.Name); taskName != "" {
 			tasks = append(tasks, tag)
 		}
+	}
+	return tasks
+}
+
+// TasksFromSummary finds task IDs in the summary by searching for matches to a regex.
+func (e *Entry) TasksFromSummary(regex *regexp.Regexp) []IDNameField {
+	matches := regex.FindAllString(e.Summary, -1)
+	var tasks []IDNameField
+	for _, match := range matches {
+		tasks = append(tasks, IDNameField{ID: match, Name: match})
+	}
+	return tasks
+}
+
+// TasksFromProject finds task IDs in the project name by searching for matches to a regex.
+func (e *Entry) TasksFromProject(regex *regexp.Regexp) []IDNameField {
+	matches := regex.FindAllString(e.Project.Name, -1)
+	var tasks []IDNameField
+	for _, match := range matches {
+		tasks = append(tasks, IDNameField{ID: match, Name: match})
+	}
+	return tasks
+}
+
+// SplitByTasks splits the entry into pieces treating tasks as separate entries.
+// If no tasks are provided, the original entry will be returned as the only item
+func (e *Entry) SplitByTasks(summary string, tasks []IDNameField) Entries {
+	if len(tasks) == 0 {
+		return Entries{*e}
 	}
 
 	var entries Entries
@@ -127,4 +149,13 @@ func (e *Entry) SplitByTagsAsTasks(summary string, regex *regexp.Regexp, tags []
 	}
 
 	return entries
+}
+
+// SplitByTagsAsTasks splits the entry into pieces treating tags as tasks.
+// Not matching tags won't be treated as a new entry should be created,
+// therefore that tag will be skipped and the returned entries will lack that.
+// If no tags are provided, the original entry will be returned as the only item
+// of the `Entries` list.
+func (e *Entry) SplitByTagsAsTasks(summary string, regex *regexp.Regexp, tags []IDNameField) Entries {
+	return e.SplitByTasks(summary, e.TasksFromTags(tags, regex))
 }
