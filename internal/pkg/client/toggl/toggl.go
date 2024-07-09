@@ -94,20 +94,15 @@ func (c *togglClient) parseEntries(rawEntries interface{}, opts *client.FetchOpt
 			UnbillableDuration: unbillableDuration,
 		}
 
-		var tasks []worklog.IDNameField
-
-		if utils.IsRegexSet(opts.TagsAsTasksRegex) && len(fetchedEntry.Tags) > 0 {
-			var tags []worklog.IDNameField
-			for _, tag := range fetchedEntry.Tags {
-				tags = append(tags, worklog.IDNameField{
-					ID:   tag,
-					Name: tag,
-				})
-			}
-			tasks = entry.TasksFromTags(tags, opts.TagsAsTasksRegex)
+		var tags []worklog.IDNameField
+		for _, tag := range fetchedEntry.Tags {
+			tags = append(tags, worklog.IDNameField{
+				ID:   tag,
+				Name: tag,
+			})
 		}
 
-		tasks = append(tasks, client.ExtractTasks(&entry, &opts.TaskExtraction)...)
+		tasks := client.ExtractTasks(&entry, tags, &opts.TaskExtraction)
 
 		splitEntries := entry.SplitByTasks(entry.Summary, tasks)
 		entries = append(entries, splitEntries...)

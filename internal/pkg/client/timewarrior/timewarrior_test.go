@@ -136,9 +136,11 @@ func TestTimewarriorClient_FetchEntries(t *testing.T) {
 	require.Nil(t, err)
 
 	entries, err := timewarriorClient.FetchEntries(context.Background(), &client.FetchOpts{
-		Start:            start,
-		End:              end,
-		TagsAsTasksRegex: regexp.MustCompile(""),
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex: regexp.MustCompile(""),
+		},
 	})
 
 	require.Nil(t, err, "cannot fetch entries")
@@ -233,9 +235,11 @@ func TestTimewarriorClient_FetchEntries_TagsAsTasksRegex_NoSplit(t *testing.T) {
 	require.Nil(t, err)
 
 	entries, err := timewarriorClient.FetchEntries(context.Background(), &client.FetchOpts{
-		Start:            start,
-		End:              end,
-		TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		},
 	})
 
 	require.Nil(t, err, "cannot fetch entries")
@@ -349,9 +353,11 @@ func TestTimewarriorClient_FetchEntries_TagsAsTasks(t *testing.T) {
 	require.Nil(t, err)
 
 	entries, err := timewarriorClient.FetchEntries(context.Background(), &client.FetchOpts{
-		Start:            start,
-		End:              end,
-		TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		},
 	})
 
 	require.Nil(t, err, "cannot fetch entries")

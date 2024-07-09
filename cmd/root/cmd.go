@@ -142,13 +142,14 @@ func runRootCmd(_ *cobra.Command, _ []string) {
 	cobra.CheckErr(err)
 
 	entries, err := fetcher.FetchEntries(context.Background(), &client.FetchOpts{
-		End:              end,
-		Start:            start,
-		User:             viper.GetString("source-user"),
-		TagsAsTasksRegex: tagsAsTasksRegex,
+		End:   end,
+		Start: start,
+		User:  viper.GetString("source-user"),
 		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex:   tagsAsTasksRegex,
 			TaskInSummaryRegex: taskInSummaryRegex,
 			TaskInProjectRegex: taskInProjectRegex,
+			MultipleTaskMode:   viper.GetString("multiple-task-mode"),
 		},
 	})
 	cobra.CheckErr(err)

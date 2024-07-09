@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gabor-boros/minutes/internal/cmd/utils"
+	"github.com/gabor-boros/minutes/internal/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,6 +42,7 @@ func initCommonFlags() {
 	rootCmd.Flags().StringP("filter-client", "", "", "filter for client name after fetching")
 	rootCmd.Flags().StringP("filter-project", "", "", "filter for project name after fetching")
 	rootCmd.Flags().BoolP("merge", "", true, "merge entries with matching project, task, summary and start date")
+	rootCmd.Flags().StringP("multiple-task-mode", "", client.SplitAcrossTasks, "how to handle multiple tasks in an entry")
 
 	rootCmd.Flags().BoolP("dry-run", "", false, "fetch entries, but do not sync them")
 	rootCmd.Flags().BoolP("version", "", false, "show command version")
@@ -145,6 +147,10 @@ func validateFlags() {
 
 	_, err = regexp.Compile(viper.GetString("filter-project"))
 	cobra.CheckErr(err)
+
+	if !utils.IsSliceContains(viper.GetString("multiple-task-mode"), client.MultipleTaskModes) {
+		cobra.CheckErr(fmt.Sprintf("\"%s\" is not part of the multiple task modes %v\n", viper.GetString("multiple-task-mode"), client.MultipleTaskModes))
+	}
 
 	switch source {
 	case "timewarrior":

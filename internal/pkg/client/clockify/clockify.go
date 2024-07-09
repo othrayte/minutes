@@ -113,8 +113,8 @@ func (c *clockifyClient) parseEntries(rawEntries interface{}, opts *client.Fetch
 			worklogEntry.Summary = worklogEntry.Notes
 		}
 
-		if utils.IsRegexSet(opts.TagsAsTasksRegex) && len(entry.Tags) > 0 {
-			pageEntries := worklogEntry.SplitByTagsAsTasks(entry.Description, opts.TagsAsTasksRegex, entry.Tags)
+		if utils.IsRegexSet(opts.TaskExtraction.TagsAsTasksRegex) && len(entry.Tags) > 0 {
+			pageEntries := worklogEntry.SplitByTagsAsTasks(entry.Description, opts.TaskExtraction.TagsAsTasksRegex, entry.Tags)
 			entries = append(entries, pageEntries...)
 		} else {
 			entries = append(entries, worklogEntry)

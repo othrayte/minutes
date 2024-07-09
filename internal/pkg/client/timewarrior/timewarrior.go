@@ -78,7 +78,7 @@ func (c *timewarriorClient) parseEntry(entry FetchEntry, opts *client.FetchOpts)
 				ID:   tag,
 				Name: tag,
 			}
-		} else if utils.IsRegexSet(opts.TagsAsTasksRegex) && opts.TagsAsTasksRegex.MatchString(tag) {
+		} else if utils.IsRegexSet(opts.TaskExtraction.TagsAsTasksRegex) && opts.TaskExtraction.TagsAsTasksRegex.MatchString(tag) {
 			worklogEntry.Task = worklog.IDNameField{
 				ID:   tag,
 				Name: tag,
@@ -94,7 +94,7 @@ func (c *timewarriorClient) parseEntry(entry FetchEntry, opts *client.FetchOpts)
 		}
 	}
 
-	if utils.IsRegexSet(opts.TagsAsTasksRegex) && len(entry.Tags) > 0 {
+	if utils.IsRegexSet(opts.TaskExtraction.TagsAsTasksRegex) && len(entry.Tags) > 0 {
 		var tags []worklog.IDNameField
 		for _, tag := range entry.Tags {
 			tags = append(tags, worklog.IDNameField{
@@ -103,7 +103,7 @@ func (c *timewarriorClient) parseEntry(entry FetchEntry, opts *client.FetchOpts)
 			})
 		}
 
-		splitEntries := worklogEntry.SplitByTagsAsTasks(worklogEntry.Summary, opts.TagsAsTasksRegex, tags)
+		splitEntries := worklogEntry.SplitByTagsAsTasks(worklogEntry.Summary, opts.TaskExtraction.TagsAsTasksRegex, tags)
 		entries = append(entries, splitEntries...)
 	} else {
 		entries = append(entries, worklogEntry)

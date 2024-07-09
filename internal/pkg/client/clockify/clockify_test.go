@@ -370,10 +370,12 @@ func TestClockifyClient_FetchEntries_TagsAsTasks(t *testing.T) {
 	require.Nil(t, err)
 
 	entries, err := clockifyClient.FetchEntries(context.Background(), &client.FetchOpts{
-		User:             "steve-rogers",
-		Start:            start,
-		End:              end,
-		TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		User:  "steve-rogers",
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		},
 	})
 
 	require.Nil(t, err, "cannot fetch entries")
@@ -449,10 +451,12 @@ func TestClockifyClient_FetchEntries_TagsAsTasks_NoTags(t *testing.T) {
 	require.Nil(t, err)
 
 	entries, err := clockifyClient.FetchEntries(context.Background(), &client.FetchOpts{
-		User:             "steve-rogers",
-		Start:            start,
-		End:              end,
-		TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		User:  "steve-rogers",
+		Start: start,
+		End:   end,
+		TaskExtraction: client.TaskExtractionOpts{
+			TagsAsTasksRegex: regexp.MustCompile(`^TASK-\d+$`),
+		},
 	})
 
 	require.Nil(t, err, "cannot fetch entries")

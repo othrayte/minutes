@@ -105,20 +105,28 @@ func (e *Entry) TasksFromTags(tags []IDNameField, regex *regexp.Regexp) []IDName
 
 // TasksFromSummary finds task IDs in the summary by searching for matches to a regex.
 func (e *Entry) TasksFromSummary(regex *regexp.Regexp) []IDNameField {
-	matches := regex.FindAllString(e.Summary, -1)
+	matches := regex.FindAllStringSubmatch(e.Summary, -1)
 	var tasks []IDNameField
 	for _, match := range matches {
-		tasks = append(tasks, IDNameField{ID: match, Name: match})
+		id := match[0]
+		if len(match) > 1 {
+			id = match[1]
+		}
+		tasks = append(tasks, IDNameField{ID: id, Name: id})
 	}
 	return tasks
 }
 
 // TasksFromProject finds task IDs in the project name by searching for matches to a regex.
 func (e *Entry) TasksFromProject(regex *regexp.Regexp) []IDNameField {
-	matches := regex.FindAllString(e.Project.Name, -1)
+	matches := regex.FindAllStringSubmatch(e.Project.Name, -1)
 	var tasks []IDNameField
 	for _, match := range matches {
-		tasks = append(tasks, IDNameField{ID: match, Name: match})
+		id := match[0]
+		if len(match) > 1 {
+			id = match[1]
+		}
+		tasks = append(tasks, IDNameField{ID: id, Name: id})
 	}
 	return tasks
 }

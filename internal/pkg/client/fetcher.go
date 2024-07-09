@@ -19,7 +19,19 @@ const (
 	DefaultPageSizeParam string = "per_page"
 	// DefaultPageParam used by paginated fetchers setting the page parameter.
 	DefaultPageParam string = "page"
+
+	// Options for handling tasks when an item is assigned to multiple tasks
+	// Split the entry into multiple entries, one for each task with the time split between them
+	SplitAcrossTasks string = "split"
+	// Only use the first task found in the entry, prefering the tasks from the summary, then tags, then project
+	// Note: the order between the tags is not guaranteed
+	FirstTaskOnly string = "first-only"
 )
+
+var MultipleTaskModes = []string{
+	SplitAcrossTasks,
+	FirstTaskOnly,
+}
 
 var (
 	// ErrFetchEntries wraps the error when fetch failed.
@@ -27,8 +39,13 @@ var (
 )
 
 type TaskExtractionOpts struct {
+	// TagsAsTasksRegex sets the regular expression used for extracting tasks
+	// from the list of tags.
+	TagsAsTasksRegex   *regexp.Regexp
 	TaskInSummaryRegex *regexp.Regexp
 	TaskInProjectRegex *regexp.Regexp
+
+	MultipleTaskMode string
 }
 
 // FetchOpts specifies the only options for Fetchers.
@@ -39,10 +56,7 @@ type FetchOpts struct {
 	Start time.Time
 	End   time.Time
 
-	// TagsAsTasksRegex sets the regular expression used for extracting tasks
-	// from the list of tags.
-	TagsAsTasksRegex *regexp.Regexp
-	TaskExtraction   TaskExtractionOpts
+	TaskExtraction TaskExtractionOpts
 }
 
 // Fetcher specifies the functions used to fetch worklog entries.
@@ -73,14 +87,22 @@ type PaginatedFetchOpts struct {
 	ParseFunc PaginatedParseFunc
 }
 
-func ExtractTasks(e *worklog.Entry, opts *TaskExtractionOpts) []worklog.IDNameField {
+func ExtractTasks(e *worklog.Entry, tags []worklog.IDNameField, opts *TaskExtractionOpts) []worklog.IDNameField {
 	var tasks []worklog.IDNameField
 	if utils.IsRegexSet(opts.TaskInSummaryRegex) {
 		tasks = append(tasks, e.TasksFromSummary(opts.TaskInSummaryRegex)...)
 	}
 
-	if utils.IsRegexSet(opts.TaskInProjectRegex) {
+	if utils.IsRegexSet(opts.TagsAsTasksRegex) && (opts.MultipleTaskMode == SplitAcrossTasks || len(tasks) == 0) {
+		tasks = append(tasks, e.TasksFromTags(tags, opts.TagsAsTasksRegex)...)
+	}
+
+	if utils.IsRegexSet(opts.TaskInProjectRegex) && (opts.MultipleTaskMode == SplitAcrossTasks || len(tasks) == 0) {
 		tasks = append(tasks, e.TasksFromProject(opts.TaskInProjectRegex)...)
+	}
+
+	if opts.MultipleTaskMode == FirstTaskOnly && len(tasks) > 1 {
+		tasks = tasks[:1]
 	}
 
 	return tasks
